@@ -64,6 +64,7 @@ description: 小游戏《拼消块》Blocks（Cocos Creator 2.4.13）的本地�
     iframe { width: 100%; height: 100%; border: 0; display: block; }
     @media (min-width: 768px) {
       iframe {
+        width: auto; /* 必须清掉移动端的 width:100%，否则 aspect-ratio 失效 */
         height: 86vh;
         aspect-ratio: 720 / 1280;
         max-width: 92vw;
