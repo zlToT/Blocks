@@ -6,7 +6,7 @@ description: 小游戏《拼消块》Blocks（Cocos Creator 2.4.13）的本地�
 
 - 游戏：《拼消块》Blocks（Cocos Creator JS 项目）
 - 引擎版本：**Cocos Creator 2.4.13**（`project.json` 中 `"version": "2.4.13"`）
-- 工程根目录：`D:\Work\GameCode\cocos\games\Blocks`
+- 工程根目录：`D:\Work\site\Blocks`
 - 编辑器可执行文件（命令行构建用）：
   `C:\ProgramData\cocos\editors\Creator\2.4.13\CocosCreator.exe`
   （由 Cocos Dashboard 安装，登记在 `C:\Users\Administrator\.Cocos\profiles\editor.json`）
@@ -23,7 +23,7 @@ description: 小游戏《拼消块》Blocks（Cocos Creator 2.4.13）的本地�
 
 ```powershell
 & "C:\ProgramData\cocos\editors\Creator\2.4.13\CocosCreator.exe" `
-  --project "D:\Work\GameCode\cocos\games\Blocks" `
+  --project "D:\Work\site\Blocks" `
   --build "platform=web-mobile"
 ```
 
@@ -90,7 +90,7 @@ description: 小游戏《拼消块》Blocks（Cocos Creator 2.4.13）的本地�
 构建完成后，在工程根目录起一个静态服务器验证：
 
 ```powershell
-cd "D:\Work\GameCode\cocos\games\Blocks\build\web-mobile"
+cd "D:\Work\site\Blocks\build\web-mobile"
 npx serve .
 ```
 
