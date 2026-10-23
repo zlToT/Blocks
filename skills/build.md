@@ -85,25 +85,24 @@ description: 小游戏《拼消块》Blocks（Cocos Creator 2.4.13）的本地�
 
 注意：每次重新构建，Cocos 会**重新生成 index.html 覆盖掉壳**，必须重做这一步。
 
-## 五、提交代码并部署 GitHub Pages
+## 五、提交代码并部署 GitHub Pages（手动）
 
-1. 提交源码到 main 分支：
-
-```powershell
+# 1. 推源码到 main
 cd "D:\Work\site\Blocks"
-git add assets settings
-git commit -m "更新游戏逻辑/资源"
+git add .
+git commit -m "描述改动"
 git push origin main
-```
 
-2. 把构建产物（`build/web-mobile/`，含手机壳）部署到 gh-pages 分支：
+# 2. 推产物到 gh-pages（build/web-mobile 本身是独立 git 仓库，remote 已指向本仓库）
+cd "D:\Work\site\Blocks\build\web-mobile"
+git add -A
+git commit -m "deploy"
+git push -f origin gh-pages
 
-```powershell
-npx gh-pages -d build/web-mobile
-```
-
-部署完成后访问 `https://zlToT.github.io/Blocks/` 验证。
-（`build/` 已在 .gitignore 排除，产物只进 gh-pages 分支，不进 main。）
+- 等 1 分钟，访问 https://zlToT.github.io/Blocks/
+- 如果有缓存问题，Ctrl+Shift+R 硬刷新
+- 注意：推 GitHub 前确认网络/代理已开，否则 push 会连接超时
+（`build/` 已在主仓库 .gitignore 排除，产物只进 gh-pages 分支，不进 main。）
 
 ## 六、硬性约束
 
