@@ -85,25 +85,34 @@ description: 小游戏《拼消块》Blocks（Cocos Creator 2.4.13）的本地�
 
 注意：每次重新构建，Cocos 会**重新生成 index.html 覆盖掉壳**，必须重做这一步。
 
-## 五、本地验证
+## 五、提交代码并部署 GitHub Pages
 
-构建完成后，在工程根目录起一个静态服务器验证：
+1. 提交源码到 main 分支：
 
 ```powershell
-cd "D:\Work\site\Blocks\build\web-mobile"
-npx serve .
+cd "D:\Work\site\Blocks"
+git add assets settings
+git commit -m "更新游戏逻辑/资源"
+git push origin main
 ```
 
-浏览器打开提示的地址，确认：能进游戏主界面、可正常点击开始、能玩一局再退出。
-（直接双击 index.html 用 file:// 打开会因跨域加载资源失败，必须走 http 服务。）
+2. 把构建产物（`build/web-mobile/`，含手机壳）部署到 gh-pages 分支：
+
+```powershell
+npx gh-pages -d build/web-mobile
+```
+
+部署完成后访问 `https://zlToT.github.io/Blocks/` 验证。
+（`build/` 已在 .gitignore 排除，产物只进 gh-pages 分支，不进 main。）
 
 ## 六、硬性约束
 
 1. 只用 2.4.13 编辑器 / CLI 构建，禁止用高版本编辑器打开升级
-2. 产物在 `build/web-mobile/`，不要改输出路径，后续 gh-pages 发布固定引用这个目录
+2. 产物在 `build/web-mobile/`，不要改输出路径，gh-pages 固定发布这个目录
 3. web-mobile 产物内部使用相对路径引用资源，部署到 `https://zlToT.github.io/Blocks/` 这种子路径下可直接运行，无需改 base
 4. 每次新构建后必须重做「第四节 PC 端套手机壳」，否则 PC 端游戏又会被拉伸
 
 ## 七、本机踩过的坑
 
 - **命令行 `--build` 在这台机器上会卡死在 `connected!`**（2026-10 实测三次），工程搬家后尤其如此。可靠做法：用 Cocos Dashboard 打开项目 → 菜单「项目 → 构建发布」→ 平台选 web-mobile → 点构建。构建完再按第四节补壳。
+- **推 GitHub 前确认网络/代理已开**，否则 `git push` 与 `gh-pages` 会连接超时。

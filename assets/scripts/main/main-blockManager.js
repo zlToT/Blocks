@@ -8,15 +8,12 @@ cc.Class({
         musicRoot: require('main-music')
     }),
 
-    onLoad () {
-        // 为了表示方块的数字，我们需要二维数组
-        // 所以两个二维数组 ， 一个装入数字代表数字， 一个装入节点，用于动画操作
+    onLoad() {
         // 在检测连接时，还要一个间接数组，存入被检测方块标志
         this.init();
         // 对象池
         this.pool = new cc.NodePool();
-        // 5*5 = 25 实际上装入25个就够用，但是这里不要装正好，多装几个。
-        // 如果在对象池未完成回收期前就创建了就会不够用，而且在创建时会有第二层保险
+        // 5*5 = 25，多装几个备用，避免回收期未完成前不够用
         for (let i = 0; i < 30; i++) {
             this.pool.put(cc.instantiate(this.blockPrefab));
         }
@@ -26,212 +23,66 @@ cc.Class({
         this.hits = 0;
     },
 
-    start () {
-        // 让我们创建方块
+    start() {
+        // 创建方块
         this.gameStart();
-        // 测试下
-        // this.createBlock(0, 0, 0);
     },
 
-    /**
-     * 检测方块周围相同方块，记录于book
-     * @param {*} col 
-     * @param {*} row 
-     * @param {*} num 
-     */
-    mapForCount (col, row, num) {
-        let dir = [[0,1],[1,0],[0,-1],[-1,0]];
-        for (let k = 0; k < 4; k++) {
-            let i = col + dir[k][0];
-            let j = row + dir[k][1];
-            // 0 - 6 1-5
-            if (i < 1 || i > 5 || j < 1 || j > 5) {
-                continue;
-            }
-            if (this.map[i][j] === num && this.book[i][j] === 0) {
-                // console.log('找到相同方块', i, j);
-                this.book[i][j] = 1;
-                this.count += 1;
-                // console.log(this.count);
-                this.mapForCount(i, j, num);
+    init() {
+        // 存图片索引
+        this.map = [];
+        // 存节点（用于动画操作）
+        this.mapNode = [];
+        // 标志消除数组
+        this.book = [];
+        // 5*5 棋盘
+        for (let row = 0; row < 5; row++) {
+            this.map[row] = [];
+            this.mapNode[row] = [];
+            this.book[row] = [];
+            for (let col = 0; col < 5; col++) {
+                this.map[row][col] = null;
+                this.mapNode[row][col] = null;
+                this.book[row][col] = 0;
             }
         }
     },
 
-    
-
-    /**
-     * 将已经标记的方块消除
-     * @param {*} col 
-     * @param {*} row 
-     */
-    doActionForBook (col, row) {
-        // 分数
-        this.mainCanvas.updateScoreLabel(this.count, this.map[col][row]);
-        for (let i = 1; i < 6; i++) {
-            for (let j = 1; j < 6; j++) {
-                if (i === col && j === row) {
-                    continue;
-                } else if (this.book[i][j] === 1) {
-                    this.mapNode[i][j].runAction(
-                        cc.sequence(
-                            cc.scaleTo(0.15, 0),
-                            cc.callFunc(() => {
-                                this.pool.put(this.mapNode[i][j]);
-                                this.map[i][j] = null;
-                                this.mapNode[i][j] = null;
-                            }, this)
-                        )
-                    );
-                }
-            }
-        }
-        // 本身操作
-        this.mapNode[col][row].runAction(
-            cc.sequence(
-                cc.scaleTo(0.15, 1.2),
-                cc.callFunc(() => {
-                    this.blockAddOne(col, row);
-                }, this),
-                cc.scaleTo(0.15, 1),
-                cc.callFunc(() => {
-                    // 进行下落
-                    this.blockDown();
-                }, this)
-            )
-        );
-
-        // 每一次消除，hp += 1；
-        this.mainCanvas.hp += 1;
-        this.mainCanvas.updateHpShow(this.mainCanvas.hp);
-        // 连击加一
-        this.musicRoot.playCombo(this.hits);
-        this.hits += 1;
-    },
-
-    /**
-     * 方块下落
-     */
-    blockDown () {
-        let downFlag = true;
-        while (downFlag) {
-            downFlag = false;
-            for (let i = 1; i < 6; i++) {
-                for (let j = 1; j < 5; j++) {
-                    if (this.mapNode[i][j] !== null && this.mapNode[i][j+1] === null) {
-                        // console.log('找到', i, j);
-                        this.mapNode[i][j].runAction(cc.moveBy(0.1, 0, -130));
-                        this.mapNode[i][j+1] = this.mapNode[i][j];
-                        this.map[i][j+1] = this.map[i][j];
-                        this.mapNode[i][j] = null;
-                        this.map[i][j] = null;
-                        downFlag = true;
-                    }
-                }
-            }
-        }
-        // 下落之后，我们需要把空补上。
-        this.scheduleOnce(this.checkNullBlock, 0.3);
-    },
-
-    checkNullBlock () {
-        for (let i = 1; i < 6; i++) {
-            for (let j = 1; j < 6; j++) {
-                if (this.mapNode[i][j] === null) {
-                    let num = this.randNum(0, 4);
-                    let x = -260 + (i - 1) * 130;
-                    let y = 260 - (j - 1) * 130;
-                    this.map[i][j] = num;
-                    this.mapNode[i][j] = this.createBlock(x, y, num);
-                    // 消除时 缩小 0
-                    // pool get 
-                    this.mapNode[i][j].scale = 0;
-                    this.mapNode[i][j].runAction(cc.scaleTo(0.1, 1));
-                }
-            }
-        }
-        // 新建方块时间0.1秒
-        this.scheduleOnce(this.checkCount, 0.3);
-    },
-
-    /**
-     * 新建方块后继续检测是否有超过3个方块连接
-     */
-    checkCount () {
-        let checkFlag = true;
-        for (let i = 1; i < 6; i++) {
-            for (let j = 1; j < 6; j++) {
-                if (checkFlag === false) break;
-                this.count = 0;
-                this.setZeroBook();
-                this.mapForCount(i, j, this.map[i][j]);
-                if (this.count >= 3) {
-                    this.doActionForBook(i, j);
-                    checkFlag = false;
-                }
-            }
-        }
-        if (checkFlag === true) {
-            this.mainCanvas.openTouch();
-        }
-    },
-
-    /**
-     * 点击方块加一
-     * @param {*} col 
-     * @param {*} row 
-     */
-    blockAddOne (col, row) {
-        if (this.map[col][row] === 8) {
-            console.log('到9了');
-            return false;
-        }
-        this.map[col][row] += 1;
-        let num = this.map[col][row];
-        this.mapNode[col][row].getComponent(cc.Sprite).spriteFrame = this.blockSpriteFrames[num];
-        return true;
-    },
-
-    gameStart () {
-        // 我们需要随机的创建25个方块
-        for (let i = 1; i < 6; i++) {
-            for (let j = 1; j < 6; j++) {
-                // 这里我们要注意坐标转化问题
-                // 我们鼠标点击的区域是正方形，而方块的坐标是在那个方形区域中心
-                // 宽为 650 左右坐标为 -325 325 那么边界的方块坐标为 -325 + 130/2。。。
-                let x = -260 + (i - 1) * 130;
-                let y = 260 - (j - 1) * 130;
-                // 这样就能遍历到所有方块 ， 随机0-4
+    gameStart() {
+        // 随机创建 5*5 个方块
+        for (let row = 0; row < 5; row++) {
+            for (let col = 0; col < 5; col++) {
+                // 方块边长 130，5 个一排共 650 宽，中心在原点
+                // col=0 最左 x=-260，col=4 最右 x=260
+                let x = -260 + col * 130;
+                // row=0 最上 y=260，row=4 最下 y=-260
+                let y = 260 - row * 130;
+                // 随机 0-4
                 let num = this.randNum(0, 4);
-                this.map[i][j] = num;
-                // 上下左右均不相同即可
-                while (this.map[i][j] === this.map[i-1][j] ||
-                       this.map[i][j] === this.map[i][j-1] ||
-                       this.map[i][j] === this.map[i+1][j] ||
-                       this.map[i][j] === this.map[i][j+1]) {
-                           num = this.randNum(0, 4);
-                           this.map[i][j] = num;
-                       }
-                // 这样就不会连着相同了, 创建完的节点存入节点数组
-                this.mapNode[i][j] = this.createBlock(x, y, num);
+                this.map[row][col] = num;
+                // 检查上面一行和左边一列（按 row 外层 col 内层遍历，这两个方向已生成）
+                while ((row > 0 && this.map[row - 1][col] === num) ||
+                    (col > 0 && this.map[row][col - 1] === num)) {
+                    num = this.randNum(0, 4);
+                    this.map[row][col] = num;
+                }
+                // 创建完的节点存入节点数组
+                this.mapNode[row][col] = this.createBlock(x, y, num);
             }
         }
-        // console.log(this.map);
-        // console.log(this.mapNode);
-        // console.log(this.book);
     },
 
     /**
-     * 通过给定坐标和数字创建一个方块
-     * @param {number} x 
-     * @param {number} y 
-     * @param {number} num 
+     * 通过给定坐标和图片索引创建一个方块
+     * @param {number} x
+     * @param {number} y
+     * @param {number} num
      */
-    createBlock (x, y, num) {
+    createBlock(x, y, num) {
         let b = null;
         // 获取前判断对象池是否为空
         if (this.pool.size() > 0) {
-            b = this.pool.get(); 
+            b = this.pool.get();
         } else {
             b = cc.instantiate(this.blockPrefab);
         }
@@ -242,43 +93,194 @@ cc.Class({
         return b;
     },
 
-    init () {
-        this.map = [];
-        this.mapNode = [];
-        // 标志数组
-        this.book = [];
-        // 让我们创建二维数组 在JavaScript中只有1维数组，二维数组就是[[],[],[],,,,,]数组中装入数组
-        for (let i = 0; i < 7; i++) {
-            this.map[i] = [];
-            this.mapNode[i] = [];
-            this.book[i] = [];
-            for (let j = 0; j < 7; j++) {
-                this.map[i][j] = null;
-                this.mapNode[i][j] = null;
-                this.book[i][j] = 0;
-            }
+    /**
+     * 点击方块加一
+     * @param {number} row
+     * @param {number} col
+     */
+    blockAddOne(row, col) {
+        if (this.map[row][col] === 8) {
+            console.log('到9了');
+            return false;
         }
-        // 这样，就初始化了3个二维数组，打印看下
-        // console.log(this.map);
-        // console.log(this.mapNode);
-        // console.log(this.book);
+        this.map[row][col] += 1;
+        let num = this.map[row][col];
+        this.mapNode[row][col].getComponent(cc.Sprite).spriteFrame = this.blockSpriteFrames[num];
+        return true;
     },
 
-    setZeroBook () {
-        for (let i = 0; i < 7; i++) {
-            for (let j = 0; j < 7; j++) {
-                this.book[i][j] = 0;
+    setZeroBook() {
+        this.count = 0;
+        for (let row = 0; row < 5; row++) {
+            for (let col = 0; col < 5; col++) {
+                this.book[row][col] = 0;
             }
         }
     },
 
     /**
-     * 返回min - max 的随机值
-     * @param {number} min 
-     * @param {number} max 
+     * 检测方块周围相同方块，记录于book
+     * @param {number} row 行（垂直）
+     * @param {number} col 列（水平）
+     * @param {number} num
      */
-    randNum (min, max) {
+    mapForCount(row, col, num) {
+        // 上下左右：[行增量, 列增量]
+        let dir = [[-1, 0], [0, 1], [1, 0], [0, -1]];
+        for (let k = 0; k < 4; k++) {
+            let r = row + dir[k][0];
+            let c = col + dir[k][1];
+            if (r < 0 || r > 4 || c < 0 || c > 4) {
+                continue;
+            }
+            if (this.map[r][c] === num && this.book[r][c] === 0) {
+                this.book[r][c] = 1;
+                this.count += 1;
+                this.mapForCount(r, c, num);
+            }
+        }
+    },
+
+    clearHits() {
+        this.hits = 0;
+    },
+
+    /**
+     * 将已经标记的方块消除
+     * @param {number} row 点击的行
+     * @param {number} col 点击的列
+     */
+    doActionForBook(row, col) {
+        // 分数
+        this.mainCanvas.updateScoreLabel(this.count, this.map[row][col]);
+        for (let r = 0; r < 5; r++) {
+            for (let c = 0; c < 5; c++) {
+                if (r === row && c === col) {
+                    continue;
+                } else if (this.book[r][c] === 1) {
+                    this.mapNode[r][c].runAction(
+                        cc.sequence(
+                            cc.scaleTo(0.15, 0),
+                            cc.callFunc(() => {
+                                this.pool.put(this.mapNode[r][c]);
+                                this.map[r][c] = null;
+                                this.mapNode[r][c] = null;
+                            }, this)
+                        )
+                    );
+                }
+            }
+        }
+        // 本身操作
+        this.mapNode[row][col].runAction(
+            cc.sequence(
+                cc.scaleTo(0.15, 1.2),
+                cc.callFunc(() => {
+                    this.blockAddOne(row, col);
+                }, this),
+                cc.scaleTo(0.15, 1),
+                cc.callFunc(() => {
+                    // 进行下落
+                    this.blockDown();
+                }, this)
+            )
+        );
+
+        // 每一次消除，hp += 1
+        this.mainCanvas.hp += 1;
+        this.mainCanvas.updateHpShow(this.mainCanvas.hp);
+        // 连击加一
+        this.musicRoot.playCombo(this.hits);
+        this.hits += 1;
+    },
+
+    /**
+     * 方块下落
+     */
+    blockDown() {
+        let downFlag = true;
+        while (downFlag) {
+            downFlag = false;
+            for (let col = 0; col < 5; col++) {
+                for (let row = 0; row < 4; row++) {
+                    if (this.mapNode[row][col] !== null && this.mapNode[row + 1][col] === null) {
+                        this.mapNode[row][col].runAction(cc.moveBy(0.1, 0, -130));
+                        this.mapNode[row + 1][col] = this.mapNode[row][col];
+                        this.map[row + 1][col] = this.map[row][col];
+                        this.mapNode[row][col] = null;
+                        this.map[row][col] = null;
+                        downFlag = true;
+                    }
+                }
+            }
+        }
+        // 下落之后，需要把空补上
+        this.scheduleOnce(this.checkNullBlock, 0.3);
+    },
+
+    checkNullBlock() {
+        for (let row = 0; row < 5; row++) {
+            for (let col = 0; col < 5; col++) {
+                if (this.mapNode[row][col] === null) {
+                    let num = this.randNum(0, 4);
+                    let x = -260 + col * 130;
+                    let y = 260 - row * 130;
+                    this.map[row][col] = num;
+                    this.mapNode[row][col] = this.createBlock(x, y, num);
+                    // 新方块从 0 缩放到 1
+                    this.mapNode[row][col].scale = 0;
+                    this.mapNode[row][col].runAction(cc.scaleTo(0.1, 1));
+                }
+            }
+        }
+        // 新建方块后继续检测三连
+        this.scheduleOnce(this.checkCount, 0.3);
+    },
+
+    /**
+     * 新建方块后继续检测是否有超过3个方块连接
+     */
+    checkCount() {
+        let checkFlag = true;
+        for (let row = 0; row < 5; row++) {
+            for (let col = 0; col < 5; col++) {
+                if (checkFlag === false) break;
+                this.setZeroBook();
+                this.mapForCount(row, col, this.map[row][col]);
+                if (this.count >= 3) {
+                    this.doActionForBook(row, col);
+                    checkFlag = false;
+                }
+            }
+        }
+        if (checkFlag === true) {
+            this.mainCanvas.openTouch();
+        }
+    },
+
+    /**
+     * 返回 [min - max] 的随机值
+     * @param {number} min
+     * @param {number} max
+     */
+    randNum(min, max) {
         let value = min + (max - min + 1) * Math.random();
         return Math.floor(value);
-    }
+    },
+
+    /**
+     * 打印当前棋盘，值 +1 显示（对应 b1~b9），空位显示 -
+     */
+    printMap() {
+        let ret = []
+        for (let row = 0; row < 5; row++) {
+            let line = [];
+            for (let col = 0; col < 5; col++) {
+                let val = this.map[row][col];
+                line.push(val === null ? '-' : val + 1);
+            }
+            ret.push(line)
+        }
+        console.log(ret);
+    },
 });
