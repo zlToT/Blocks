@@ -16,11 +16,15 @@ cc.Class({
         }
     },
 
+    onLoad() {
+        cc.audioEngine.setEffectsVolume(0.4)
+    },
+
     /**
      * 播放连击音效，参数为0-5
      * @param {number} id 
      */
-    playCombo (id) {
+    playCombo(id) {
         if (id < 0) return;
         if (id > 5) {
             id = 5;
@@ -31,14 +35,14 @@ cc.Class({
     /**
      * 播放点击音效
      */
-    playHit () {
+    playHit() {
         cc.audioEngine.playEffect(this.hit, false);
     },
 
     /**
      * 播放结束音效 (纠正下上期错误)
      */
-    playOver () {
+    playOver() {
         cc.audioEngine.playEffect(this.over, false);
     }
 

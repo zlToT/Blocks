@@ -52,7 +52,7 @@ cc.Class({
         // col = 列（水平/x）最左 x=-325 对应 col=0 索引 0~4 
         let row = Math.floor((325 - pos.y) / 130);
         let col = Math.floor((325 + pos.x) / 130);
-        console.log("点击行和列", row + 1, col + 1)
+        // console.log("点击行和列", row + 1, col + 1)
         // 如果出界
         if (row < 0 || row > 4 || col < 0 || col > 4) {
             console.log('不在范围内');

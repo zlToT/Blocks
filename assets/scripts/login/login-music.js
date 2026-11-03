@@ -10,9 +10,11 @@ cc.Class({
 
     // LIFE-CYCLE CALLBACKS:
 
-    // onLoad () {},
+    onLoad() {
+        cc.audioEngine.setMusicVolume(0.2)
+    },
 
-    start () {
+    start() {
         //cc.audioEngine.playMusic(this.bgm, true);
         if (!cc.audioEngine.isMusicPlaying()) {
             cc.audioEngine.playMusic(this.bgm, true);
